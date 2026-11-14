@@ -1,0 +1,9 @@
+Config/Local.xcconfig
+Config/Info.plist
+Needle.xcodeproj/
+build/
+DerivedData/
+*.ipa
+Payload/
+.DS_Store
+xcuserdata/

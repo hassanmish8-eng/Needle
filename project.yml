@@ -1,0 +1,114 @@
+name: Needle
+
+options:
+  bundleIdPrefix: com.needle
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+# Per-machine values (Client ID, bundle id) live in Config/*.xcconfig so no credentials are committed.
+configFiles:
+  Debug: Config/Debug.xcconfig
+  Release: Config/Release.xcconfig
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    SUPPORTS_MACCATALYST: NO
+
+packages:
+  SpotifyiOS:
+    url: https://github.com/spotify/ios-sdk
+    from: 5.0.1
+
+targets:
+  Needle:
+    type: application
+    platform: iOS
+    sources:
+      - path: Needle
+    dependencies:
+      - package: SpotifyiOS
+        product: SpotifyiOS
+    info:
+      path: Config/Info.plist
+      properties:
+        CFBundleDisplayName: NEEDLE
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIRequiredDeviceCapabilities:
+          - arm64
+        # Lets NEEDLE ask iOS whether the Spotify app is installed.
+        LSApplicationQueriesSchemes:
+          - spotify
+        # Redirect URI = <scheme>://spotify-login-callback (register this exact string in the Spotify dashboard)
+        CFBundleURLTypes:
+          - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)
+            CFBundleURLSchemes:
+              - $(SPOTIFY_REDIRECT_SCHEME)
+        SpotifyClientID: $(SPOTIFY_CLIENT_ID)
+        SpotifyRedirectScheme: $(SPOTIFY_REDIRECT_SCHEME)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(NEEDLE_BUNDLE_ID)
+        PRODUCT_NAME: Needle
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+          ENABLE_TESTABILITY: YES
+
+  NeedleTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: NeedleTests
+    dependencies:
+      - target: Needle
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(NEEDLE_BUNDLE_ID).tests
+        GENERATE_INFOPLIST_FILE: YES
+
+  NeedleUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: NeedleUITests
+    dependencies:
+      - target: Needle
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(NEEDLE_BUNDLE_ID).uitests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  Needle:
+    build:
+      targets:
+        Needle: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - NeedleTests
+        - NeedleUITests
+    archive:
+      config: Release
