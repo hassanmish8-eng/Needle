@@ -1,0 +1,70 @@
+name: Build unsigned IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Write local configuration
+        env:
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          NEEDLE_BUNDLE_ID: ${{ vars.NEEDLE_BUNDLE_ID }}
+        run: |
+          if [ -z "$SPOTIFY_CLIENT_ID" ]; then
+            echo "::error::Add a repository secret named SPOTIFY_CLIENT_ID (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          printf 'SPOTIFY_CLIENT_ID = %s\n' "$SPOTIFY_CLIENT_ID" > Config/Local.xcconfig
+          if [ -n "$NEEDLE_BUNDLE_ID" ]; then
+            printf 'NEEDLE_BUNDLE_ID = %s\n' "$NEEDLE_BUNDLE_ID" >> Config/Local.xcconfig
+          fi
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build for iPhone (arm64, unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Needle.xcodeproj \
+            -scheme Needle \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build | tee build.log | tail -n 80
+
+      - name: Package IPA
+        run: |
+          APP="build/Build/Products/Release-iphoneos/Needle.app"
+          test -d "$APP"
+          rm -rf Payload Needle-unsigned.ipa
+          mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qry Needle-unsigned.ipa Payload
+          ls -lh Needle-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Needle-unsigned-ipa
+          path: Needle-unsigned.ipa
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-log
+          path: build.log
