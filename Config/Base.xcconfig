@@ -1,0 +1,9 @@
+// Defaults that are safe to commit. Do NOT put your Client ID here:
+// copy Local.xcconfig.example to Local.xcconfig (git-ignored) and fill it in.
+
+// Must be unique to you. This exact value has to be registered in the Spotify dashboard
+// (iOS Bundle IDs). Sideloading tools may rewrite it; see README.
+NEEDLE_BUNDLE_ID = com.needle.vinyl
+
+SPOTIFY_CLIENT_ID =
+SPOTIFY_REDIRECT_SCHEME = needle-spotify

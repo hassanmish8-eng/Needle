@@ -1,0 +1,4 @@
+// Copy to Local.xcconfig (ignored by git) and fill in your values.
+SPOTIFY_CLIENT_ID = paste_your_spotify_client_id_here
+NEEDLE_BUNDLE_ID = com.yourname.needle
+// SPOTIFY_REDIRECT_SCHEME = needle-spotify
